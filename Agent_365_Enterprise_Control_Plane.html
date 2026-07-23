@@ -1,0 +1,1274 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Agent 365 Enterprise Control Plane Dashboard</title>
+  <script>
+    (() => {
+      const param = new URLSearchParams(window.location.search).get("scoutTheme");
+      const theme =
+        param || (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+      document.documentElement.setAttribute("data-theme", theme);
+    })();
+  </script>
+  <style>
+    :root {
+      color-scheme: light;
+      --cp-bg: #f7f4ef;
+      --cp-bg-elevated: #fcfbf8;
+      --cp-surface: #ffffff;
+      --cp-surface-soft: #f5f5f5;
+      --cp-border: #dedede;
+      --cp-border-strong: #919191;
+      --cp-text: #242424;
+      --cp-text-muted: #5c5c5c;
+      --cp-text-soft: #6f6f6f;
+      --cp-accent: #b11f4b;
+      --cp-accent-hover: #9a1a41;
+      --cp-accent-soft: rgba(177, 31, 75, 0.08);
+      --cp-accent-fg: #ffffff;
+      --cp-success: #16a34a;
+      --cp-danger: #dc2626;
+      --cp-warning: #f59e0b;
+      --cp-link: #0078d4;
+      --cp-shadow: 0 18px 48px rgba(0, 0, 0, 0.12);
+      --cp-overlay: rgba(255, 255, 255, 0.8);
+      --cp-panel: rgba(255, 255, 255, 0.86);
+      --cp-panel-strong: rgba(255, 255, 255, 0.96);
+      --cp-sheen: rgba(255, 255, 255, 0.55);
+      --cp-highlight: rgba(177, 31, 75, 0.12);
+    }
+    html[data-theme="dark"] {
+      color-scheme: dark;
+      --cp-bg: #3d3b3a;
+      --cp-bg-elevated: #343231;
+      --cp-surface: #292929;
+      --cp-surface-soft: #2e2e2e;
+      --cp-border: #474747;
+      --cp-border-strong: #5f5f5f;
+      --cp-text: #dedede;
+      --cp-text-muted: #919191;
+      --cp-text-soft: #b0b0b0;
+      --cp-accent: #fd8ea1;
+      --cp-accent-hover: #fb7b91;
+      --cp-accent-soft: rgba(253, 142, 161, 0.14);
+      --cp-accent-fg: #1a1a1a;
+      --cp-success: #4ade80;
+      --cp-danger: #f87171;
+      --cp-warning: #fbbf24;
+      --cp-link: #4da6ff;
+      --cp-shadow: 0 18px 48px rgba(0, 0, 0, 0.32);
+      --cp-overlay: rgba(41, 41, 41, 0.88);
+      --cp-panel: rgba(41, 41, 41, 0.72);
+      --cp-panel-strong: rgba(41, 41, 41, 0.96);
+      --cp-sheen: rgba(255, 255, 255, 0.04);
+      --cp-highlight: rgba(253, 142, 161, 0.12);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      margin: 0;
+      background:
+        radial-gradient(circle at top left, var(--cp-highlight), transparent 30rem),
+        linear-gradient(180deg, var(--cp-bg-elevated), var(--cp-bg));
+      color: var(--cp-text);
+      font-family: "Segoe UI", Aptos, Calibri, -apple-system, BlinkMacSystemFont, sans-serif;
+      line-height: 1.5;
+    }
+
+    a {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    .app {
+      display: grid;
+      grid-template-columns: 18rem minmax(0, 1fr);
+      min-height: 100vh;
+    }
+
+    .sidebar {
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      padding: 1.25rem;
+      border-right: 1px solid var(--cp-border);
+      background: var(--cp-panel-strong);
+      overflow: auto;
+    }
+
+    .brand {
+      display: flex;
+      gap: 0.75rem;
+      align-items: center;
+      margin-bottom: 1.5rem;
+    }
+
+    .brand-mark {
+      width: 2.5rem;
+      height: 2.5rem;
+      border-radius: 0.625rem;
+      background: var(--cp-accent);
+      color: var(--cp-accent-fg);
+      display: grid;
+      place-items: center;
+      font-weight: 700;
+      letter-spacing: -0.03em;
+    }
+
+    .brand-title {
+      font-weight: 700;
+      letter-spacing: -0.02em;
+    }
+
+    .brand-subtitle,
+    .eyebrow,
+    .muted {
+      color: var(--cp-text-muted);
+    }
+
+    .brand-subtitle {
+      font-size: 0.8125rem;
+    }
+
+    .nav {
+      display: grid;
+      gap: 0.25rem;
+      margin-top: 1rem;
+    }
+
+    .nav a {
+      display: flex;
+      align-items: center;
+      gap: 0.625rem;
+      padding: 0.625rem 0.75rem;
+      border: 1px solid transparent;
+      border-radius: 0.625rem;
+      color: var(--cp-text-muted);
+      font-size: 0.9375rem;
+    }
+
+    .nav a:hover,
+    .nav a.active {
+      color: var(--cp-text);
+      background: var(--cp-accent-soft);
+      border-color: var(--cp-border);
+    }
+
+    .nav-number {
+      color: var(--cp-accent);
+      font-weight: 700;
+      font-size: 0.8125rem;
+      min-width: 1.75rem;
+    }
+
+    .content {
+      min-width: 0;
+      padding: 1.5rem;
+    }
+
+    .hero {
+      position: relative;
+      overflow: hidden;
+      min-height: 32rem;
+      display: grid;
+      grid-template-columns: minmax(0, 1.1fr) minmax(22rem, 0.9fr);
+      gap: 1.5rem;
+      align-items: stretch;
+      padding: 2rem;
+      border: 1px solid var(--cp-border);
+      border-radius: 16px;
+      background: var(--cp-panel-strong);
+      box-shadow: 0 0 2px var(--cp-border), 0 1px 2px var(--cp-border);
+    }
+
+    .hero-copy {
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: 2rem;
+      min-height: 100%;
+    }
+
+    .eyebrow {
+      text-transform: uppercase;
+      font-size: 0.75rem;
+      letter-spacing: 0.12em;
+      font-weight: 700;
+      margin-bottom: 0.75rem;
+    }
+
+    h1,
+    h2,
+    h3,
+    p {
+      margin-top: 0;
+    }
+
+    h1 {
+      max-width: 54rem;
+      margin-bottom: 1rem;
+      font-size: clamp(2.4rem, 5vw, 4.75rem);
+      line-height: 0.98;
+      letter-spacing: -0.06em;
+    }
+
+    h2 {
+      font-size: clamp(1.75rem, 3vw, 2.6rem);
+      line-height: 1.08;
+      letter-spacing: -0.04em;
+      margin-bottom: 0.75rem;
+    }
+
+    h3 {
+      font-size: 1.05rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .lead {
+      max-width: 52rem;
+      color: var(--cp-text-muted);
+      font-size: 1.2rem;
+    }
+
+    .pill-row,
+    .stats-grid,
+    .card-grid,
+    .capability-list,
+    .resource-row,
+    .button-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+    }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.45rem 0.7rem;
+      border: 1px solid var(--cp-border);
+      border-radius: 999rem;
+      color: var(--cp-text-muted);
+      background: var(--cp-surface);
+      font-size: 0.875rem;
+    }
+
+    .pill strong {
+      color: var(--cp-text);
+    }
+
+    .button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 2.5rem;
+      padding: 0.625rem 1rem;
+      border: 1px solid var(--cp-border);
+      border-radius: 0.625rem;
+      background: var(--cp-surface);
+      color: var(--cp-text);
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .button.primary {
+      background: var(--cp-accent);
+      color: var(--cp-accent-fg);
+      border-color: var(--cp-accent);
+    }
+
+    .button:hover {
+      border-color: var(--cp-border-strong);
+    }
+
+    .hero-visual,
+    .panel,
+    .card,
+    .metric,
+    .callout {
+      border: 1px solid var(--cp-border);
+      border-radius: 16px;
+      background: var(--cp-surface);
+      box-shadow: 0 0 2px var(--cp-border), 0 1px 2px var(--cp-border);
+    }
+
+    .hero-visual {
+      padding: 1.25rem;
+      display: grid;
+      gap: 1rem;
+      align-content: center;
+    }
+
+    .control-plane {
+      display: grid;
+      gap: 0.75rem;
+    }
+
+    .node {
+      border: 1px solid var(--cp-border);
+      border-radius: 0.625rem;
+      padding: 0.875rem;
+      background: var(--cp-surface-soft);
+      text-align: center;
+    }
+
+    .node.primary {
+      background: var(--cp-accent);
+      color: var(--cp-accent-fg);
+      border-color: var(--cp-accent);
+      font-weight: 700;
+    }
+
+    .flow-line {
+      width: 1px;
+      height: 1.5rem;
+      background: var(--cp-border-strong);
+      margin: 0 auto;
+    }
+
+    .node-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 0.75rem;
+    }
+
+    .section {
+      margin-top: 1.5rem;
+      padding: 1.5rem;
+      border: 1px solid var(--cp-border);
+      border-radius: 16px;
+      background: var(--cp-panel);
+    }
+
+    .section-header {
+      display: flex;
+      justify-content: space-between;
+      gap: 1rem;
+      align-items: end;
+      margin-bottom: 1rem;
+    }
+
+    .section-header p {
+      max-width: 48rem;
+      margin-bottom: 0;
+    }
+
+    .metric {
+      flex: 1 1 10rem;
+      padding: 1rem;
+    }
+
+    .metric-value {
+      display: block;
+      font-size: 2rem;
+      line-height: 1;
+      font-weight: 700;
+      letter-spacing: -0.04em;
+      color: var(--cp-accent);
+      margin-bottom: 0.5rem;
+    }
+
+    .metric-label {
+      color: var(--cp-text-muted);
+      font-size: 0.9rem;
+    }
+
+    .card-grid {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+    }
+
+    .card {
+      padding: 1rem;
+      min-height: 12rem;
+    }
+
+    .card button {
+      all: unset;
+      cursor: pointer;
+      display: grid;
+      gap: 0.5rem;
+      width: 100%;
+      height: 100%;
+    }
+
+    .card.active,
+    .card:hover {
+      border-color: var(--cp-accent);
+      background: var(--cp-accent-soft);
+    }
+
+    .icon {
+      width: 2rem;
+      height: 2rem;
+      border-radius: 0.625rem;
+      display: grid;
+      place-items: center;
+      background: var(--cp-accent-soft);
+      color: var(--cp-accent);
+      font-weight: 800;
+    }
+
+    .details-panel {
+      margin-top: 1rem;
+      padding: 1rem;
+      border: 1px solid var(--cp-border);
+      border-radius: 16px;
+      background: var(--cp-surface);
+    }
+
+    .details-grid {
+      display: grid;
+      grid-template-columns: 0.8fr 1.2fr;
+      gap: 1rem;
+    }
+
+    .list {
+      margin: 0;
+      padding-left: 1.1rem;
+      color: var(--cp-text-muted);
+    }
+
+    .list li {
+      margin: 0.35rem 0;
+    }
+
+    .architecture {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: 0.75rem;
+      align-items: stretch;
+      margin-top: 1rem;
+    }
+
+    .arch-column {
+      position: relative;
+      padding: 1rem;
+      border: 1px solid var(--cp-border);
+      border-radius: 16px;
+      background: var(--cp-surface);
+    }
+
+    .arch-column::before {
+      content: "";
+      position: absolute;
+      top: -1rem;
+      left: 50%;
+      width: 1px;
+      height: 1rem;
+      background: var(--cp-border-strong);
+    }
+
+    .center-label {
+      width: min(28rem, 100%);
+      margin: 0 auto;
+      padding: 1rem;
+      border-radius: 16px;
+      background: var(--cp-accent);
+      color: var(--cp-accent-fg);
+      text-align: center;
+      font-weight: 700;
+    }
+
+    .timeline {
+      display: grid;
+      grid-template-columns: repeat(6, minmax(0, 1fr));
+      gap: 0.75rem;
+    }
+
+    .step {
+      position: relative;
+      padding: 1rem;
+      border: 1px solid var(--cp-border);
+      border-radius: 16px;
+      background: var(--cp-surface);
+      cursor: pointer;
+    }
+
+    .step.active,
+    .step:hover {
+      border-color: var(--cp-accent);
+      background: var(--cp-accent-soft);
+    }
+
+    .step-number {
+      display: inline-grid;
+      place-items: center;
+      width: 2rem;
+      height: 2rem;
+      border-radius: 999rem;
+      background: var(--cp-accent);
+      color: var(--cp-accent-fg);
+      font-weight: 700;
+      margin-bottom: 0.75rem;
+    }
+
+    .split {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(20rem, 0.9fr);
+      gap: 1rem;
+      align-items: start;
+    }
+
+    .org-chart,
+    .registry-tree,
+    .workiq-flow,
+    .ecosystem {
+      display: grid;
+      gap: 0.75rem;
+      padding: 1rem;
+      border: 1px solid var(--cp-border);
+      border-radius: 16px;
+      background: var(--cp-surface);
+    }
+
+    .tree-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.75rem;
+    }
+
+    .tree-children {
+      display: grid;
+      gap: 0.5rem;
+      padding-left: 1rem;
+      border-left: 1px solid var(--cp-border-strong);
+    }
+
+    .tabs {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+      margin-bottom: 1rem;
+    }
+
+    .tab {
+      padding: 0.6rem 0.8rem;
+      border: 1px solid var(--cp-border);
+      border-radius: 0.625rem;
+      background: var(--cp-surface);
+      color: var(--cp-text-muted);
+      cursor: pointer;
+      font: inherit;
+      font-weight: 600;
+    }
+
+    .tab.active,
+    .tab:hover {
+      background: var(--cp-accent);
+      color: var(--cp-accent-fg);
+      border-color: var(--cp-accent);
+    }
+
+    .tab-panel {
+      display: none;
+    }
+
+    .tab-panel.active {
+      display: block;
+    }
+
+    .matrix {
+      width: 100%;
+      border-collapse: collapse;
+      overflow: hidden;
+      border-radius: 16px;
+      background: var(--cp-surface);
+      border: 1px solid var(--cp-border);
+    }
+
+    .matrix th,
+    .matrix td {
+      padding: 0.85rem;
+      border-bottom: 1px solid var(--cp-border);
+      text-align: left;
+      vertical-align: top;
+    }
+
+    .matrix th {
+      background: var(--cp-surface-soft);
+      color: var(--cp-text);
+      font-size: 0.85rem;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+
+    .matrix tr:last-child td {
+      border-bottom: 0;
+    }
+
+    .status {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      padding: 0.25rem 0.5rem;
+      border: 1px solid var(--cp-border);
+      border-radius: 999rem;
+      color: var(--cp-text-muted);
+      background: var(--cp-surface-soft);
+      font-size: 0.8125rem;
+    }
+
+    .dot {
+      width: 0.55rem;
+      height: 0.55rem;
+      border-radius: 999rem;
+      background: var(--cp-accent);
+    }
+
+    .callout {
+      padding: 1rem;
+      background: var(--cp-accent-soft);
+    }
+
+    .value-stack {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 0.75rem;
+    }
+
+    .resource-card {
+      flex: 1 1 16rem;
+      padding: 1rem;
+      border: 1px solid var(--cp-border);
+      border-radius: 16px;
+      background: var(--cp-surface);
+    }
+
+    .resource-card a {
+      color: var(--cp-link);
+      font-weight: 700;
+    }
+
+    footer {
+      padding: 1.5rem 0 0;
+      color: var(--cp-text-muted);
+      font-size: 0.875rem;
+    }
+
+    .print-note {
+      display: none;
+    }
+
+    @media (max-width: 1180px) {
+      .app {
+        grid-template-columns: 1fr;
+      }
+
+      .sidebar {
+        position: relative;
+        height: auto;
+        border-right: 0;
+        border-bottom: 1px solid var(--cp-border);
+      }
+
+      .nav {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .hero,
+      .split,
+      .details-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .card-grid,
+      .architecture,
+      .value-stack {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .timeline {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+      }
+    }
+
+    @media (max-width: 720px) {
+      .content,
+      .hero,
+      .section {
+        padding: 1rem;
+      }
+
+      .nav,
+      .card-grid,
+      .architecture,
+      .timeline,
+      .node-grid,
+      .value-stack,
+      .tree-row {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media print {
+      .sidebar,
+      .button-row {
+        display: none;
+      }
+
+      .app,
+      .hero,
+      .split,
+      .details-grid {
+        display: block;
+      }
+
+      .section,
+      .hero {
+        break-inside: avoid;
+        margin-top: 1rem;
+      }
+
+      .print-note {
+        display: block;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="brand-mark" aria-hidden="true">A365</div>
+        <div>
+          <div class="brand-title">Agent 365</div>
+          <div class="brand-subtitle">Enterprise control plane</div>
+        </div>
+      </div>
+      <div class="eyebrow">Customer-facing L300 dashboard</div>
+      <nav class="nav" aria-label="Dashboard sections">
+        <a href="#summary"><span class="nav-number">01</span>Executive summary</a>
+        <a href="#architecture"><span class="nav-number">02</span>Architecture</a>
+        <a href="#identity"><span class="nav-number">03</span>Identity</a>
+        <a href="#lifecycle"><span class="nav-number">04</span>Lifecycle</a>
+        <a href="#governance"><span class="nav-number">05</span>Governance</a>
+        <a href="#registry"><span class="nav-number">06</span>Discovery</a>
+        <a href="#security"><span class="nav-number">07</span>Security</a>
+        <a href="#workiq"><span class="nav-number">08</span>Work IQ</a>
+        <a href="#ecosystem"><span class="nav-number">09</span>Ecosystem</a>
+        <a href="#observability"><span class="nav-number">10</span>Observability</a>
+        <a href="#value"><span class="nav-number">11</span>Enterprise value</a>
+      </nav>
+    </aside>
+
+    <main class="content">
+      <section class="hero" id="top">
+        <div class="hero-copy">
+          <div>
+            <div class="eyebrow">Microsoft Agent 365</div>
+            <h1>Secure, Govern, Discover, and Scale AI Agents Across the Enterprise</h1>
+            <p class="lead">Agent 365 extends Microsoft 365 identity, security, governance, productivity, and collaboration capabilities to AI agents across Microsoft and non-Microsoft platforms.</p>
+            <div class="pill-row" aria-label="Core capabilities">
+              <span class="pill"><strong>Identity</strong> Entra-backed agent IDs</span>
+              <span class="pill"><strong>Security</strong> Defender protection</span>
+              <span class="pill"><strong>Compliance</strong> Purview controls</span>
+              <span class="pill"><strong>Context</strong> Work IQ</span>
+              <span class="pill"><strong>Scale</strong> Registry and lifecycle</span>
+            </div>
+          </div>
+          <div class="button-row">
+            <a class="button primary" href="#architecture">Explore architecture</a>
+            <a class="button" href="#value">View executive value</a>
+          </div>
+        </div>
+        <div class="hero-visual" aria-label="Agent 365 control plane diagram">
+          <div class="node">Employees + Agents</div>
+          <div class="flow-line" aria-hidden="true"></div>
+          <div class="node primary">Agent 365 Control Plane</div>
+          <div class="flow-line" aria-hidden="true"></div>
+          <div class="node-grid">
+            <div class="node">Identity<br><span class="muted">Entra</span></div>
+            <div class="node">Security<br><span class="muted">Defender + Purview</span></div>
+            <div class="node">Productivity<br><span class="muted">M365 + Work IQ</span></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="section" id="summary">
+        <div class="section-header">
+          <div>
+            <div class="eyebrow">Executive summary</div>
+            <h2>Agent 365 is the operating model for enterprise AI agents.</h2>
+            <p class="muted">Just as Microsoft 365 provides identity, collaboration, governance, compliance, and security for people, Agent 365 extends those capabilities to agents.</p>
+          </div>
+        </div>
+        <div class="stats-grid">
+          <div class="metric"><span class="metric-value">9</span><span class="metric-label">Core enterprise agent capabilities</span></div>
+          <div class="metric"><span class="metric-value">5</span><span class="metric-label">Control plane pillars</span></div>
+          <div class="metric"><span class="metric-value">4+</span><span class="metric-label">Supported agent platform categories</span></div>
+          <div class="metric"><span class="metric-value">1</span><span class="metric-label">Unified registry and governance plane</span></div>
+        </div>
+        <div class="value-stack" style="margin-top: 0.75rem;">
+          <div class="card"><h3>Agent Identity</h3><p class="muted">Unique agent IDs, authentication, conditional access, RBAC, and risk detection.</p></div>
+          <div class="card"><h3>Agent Governance</h3><p class="muted">Sponsor, owner, and manager accountability to prevent orphaned agents.</p></div>
+          <div class="card"><h3>Agent Discovery</h3><p class="muted">Registry, catalog, collections, agent cards, and capability discovery.</p></div>
+          <div class="card"><h3>Work IQ Context</h3><p class="muted">People, files, chats, meetings, transcripts, relationships, and organizational memory.</p></div>
+        </div>
+      </section>
+
+      <section class="section" id="architecture">
+        <div class="section-header">
+          <div>
+            <div class="eyebrow">Section 1</div>
+            <h2>The Agent 365 Architecture</h2>
+            <p class="muted">A unified control plane connects enterprise identity, data governance, threat protection, productivity, context, and registry services.</p>
+          </div>
+        </div>
+        <div class="center-label">Agent 365</div>
+        <div class="architecture" aria-label="Agent 365 architecture pillars">
+          <div class="arch-column"><h3>Entra</h3><p class="muted">Identity and access management for agents.</p></div>
+          <div class="arch-column"><h3>Purview</h3><p class="muted">Data governance, classification, labeling, DLP, and compliance.</p></div>
+          <div class="arch-column"><h3>Defender</h3><p class="muted">Threat protection, incident response, and risk detection.</p></div>
+          <div class="arch-column"><h3>Microsoft 365</h3><p class="muted">Outlook, Teams, SharePoint, OneDrive, and Copilot surfaces.</p></div>
+          <div class="arch-column"><h3>Registry</h3><p class="muted">Discovery, inventory, collections, catalog, and interoperability.</p></div>
+        </div>
+        <div class="card-grid" style="margin-top: 1rem;">
+          <article class="card active" data-capability="entra"><button type="button"><span class="icon">E</span><h3>Entra</h3><p class="muted">Agent IDs, authentication, Conditional Access, RBAC, entitlements, and risk detection.</p></button></article>
+          <article class="card" data-capability="purview"><button type="button"><span class="icon">P</span><h3>Purview</h3><p class="muted">Discovery, classification, labels, DLP, insider risk, and AI data protection.</p></button></article>
+          <article class="card" data-capability="defender"><button type="button"><span class="icon">D</span><h3>Defender</h3><p class="muted">Malware detection, threat intelligence, endpoint protection, and response.</p></button></article>
+          <article class="card" data-capability="m365"><button type="button"><span class="icon">M</span><h3>Microsoft 365</h3><p class="muted">Productivity and collaboration across the Microsoft 365 estate.</p></button></article>
+          <article class="card" data-capability="workiq"><button type="button"><span class="icon">W</span><h3>Work IQ</h3><p class="muted">Enterprise context engine for people, files, meetings, and relationships.</p></button></article>
+        </div>
+        <div class="details-panel" id="capabilityDetails" aria-live="polite"></div>
+      </section>
+
+      <section class="section" id="identity">
+        <div class="section-header">
+          <div>
+            <div class="eyebrow">Section 2</div>
+            <h2>Agent Identity Architecture</h2>
+            <p class="muted">Agent identity starts with a publishing tenant and blueprint, then flows into service principals, individual agent IDs, and optional agent users.</p>
+          </div>
+        </div>
+        <div class="split">
+          <div class="org-chart">
+            <div class="node">Publishing Tenant</div>
+            <div class="flow-line" aria-hidden="true"></div>
+            <div class="node">Blueprint</div>
+            <div class="flow-line" aria-hidden="true"></div>
+            <div class="node">Blueprint Service Principal</div>
+            <div class="flow-line" aria-hidden="true"></div>
+            <div class="node primary">Agent IDs</div>
+            <div class="flow-line" aria-hidden="true"></div>
+            <div class="node">Agent Users</div>
+          </div>
+          <div class="panel" style="padding: 1rem;">
+            <h3>Identity model detail</h3>
+            <table class="matrix" aria-label="Identity model detail">
+              <tbody>
+                <tr><td><strong>Publishing tenant</strong></td><td class="muted">Agent development and publishing location.</td></tr>
+                <tr><td><strong>Blueprint</strong></td><td class="muted">Identity template defining permissions, roles, access model, and authentication model.</td></tr>
+                <tr><td><strong>Blueprint service principal</strong></td><td class="muted">Tenant representation of the published blueprint.</td></tr>
+                <tr><td><strong>Agent ID</strong></td><td class="muted">Unique identity for every individual agent instance.</td></tr>
+                <tr><td><strong>Agent user</strong></td><td class="muted">Optional collaboration identity enabling mailbox, Teams, SharePoint, and Microsoft 365 presence.</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <section class="section" id="lifecycle">
+        <div class="section-header">
+          <div>
+            <div class="eyebrow">Section 3</div>
+            <h2>Agent Lifecycle</h2>
+            <p class="muted">A lifecycle framework governs agents from creation through retirement, with policy and observability at each stage.</p>
+          </div>
+        </div>
+        <div class="timeline" role="list">
+          <div class="step active" role="listitem" data-step="create"><span class="step-number">1</span><h3>Create</h3><p class="muted">Define the blueprint and business purpose.</p></div>
+          <div class="step" role="listitem" data-step="configure"><span class="step-number">2</span><h3>Configure</h3><p class="muted">Apply permissions, access, and governance.</p></div>
+          <div class="step" role="listitem" data-step="deploy"><span class="step-number">3</span><h3>Deploy</h3><p class="muted">Publish through Foundry, Copilot Studio, or other platforms.</p></div>
+          <div class="step" role="listitem" data-step="operate"><span class="step-number">4</span><h3>Operate</h3><p class="muted">Run enterprise workloads with accountable ownership.</p></div>
+          <div class="step" role="listitem" data-step="monitor"><span class="step-number">5</span><h3>Monitor</h3><p class="muted">Track security, compliance, quality, and safety.</p></div>
+          <div class="step" role="listitem" data-step="retire"><span class="step-number">6</span><h3>Retire</h3><p class="muted">Decommission identities, access, data, and registry entries.</p></div>
+        </div>
+        <div class="details-panel" id="lifecycleDetails" aria-live="polite"></div>
+      </section>
+
+      <section class="section" id="governance">
+        <div class="section-header">
+          <div>
+            <div class="eyebrow">Section 4</div>
+            <h2>Agent Governance</h2>
+            <p class="muted">Every agent needs clear business accountability to prevent orphaned agents, uncontrolled growth, and unmanaged risk.</p>
+          </div>
+        </div>
+        <div class="split">
+          <div class="org-chart">
+            <div class="node primary">Agent</div>
+            <div class="tree-row">
+              <div class="node"><strong>Sponsor</strong><br><span class="muted">Required</span></div>
+              <div class="tree-children">
+                <div class="node">Owner<br><span class="muted">Optional</span></div>
+                <div class="node">Manager<br><span class="muted">Optional</span></div>
+              </div>
+            </div>
+          </div>
+          <div class="panel" style="padding: 1rem;">
+            <h3>Governance outcomes</h3>
+            <ul class="list">
+              <li>Business sponsor establishes accountability and purpose.</li>
+              <li>Owner or manager maintains operational responsibility when required.</li>
+              <li>Lifecycle policies reduce agent sprawl and unmanaged access.</li>
+              <li>Registry metadata improves auditability and review readiness.</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <section class="section" id="registry">
+        <div class="section-header">
+          <div>
+            <div class="eyebrow">Sections 5 and 6</div>
+            <h2>Agent Discovery, Registry, and Collections</h2>
+            <p class="muted">The registry creates a unified catalog for Microsoft agents, Foundry agents, Copilot Studio agents, ISV agents, and third-party agents.</p>
+          </div>
+        </div>
+        <div class="tabs" role="tablist" aria-label="Registry views">
+          <button class="tab active" type="button" data-tab="registry-overview">Registry</button>
+          <button class="tab" type="button" data-tab="collections">Collections</button>
+          <button class="tab" type="button" data-tab="catalog">Catalog benefits</button>
+        </div>
+        <div class="tab-panel active" id="registry-overview">
+          <div class="registry-tree">
+            <div class="node primary">Registry</div>
+            <div class="tree-children">
+              <div class="node">Microsoft Agents</div>
+              <div class="node">Azure AI Foundry Agents</div>
+              <div class="node">Copilot Studio Agents</div>
+              <div class="node">ISV Agents</div>
+              <div class="node">Third-Party Agents</div>
+            </div>
+          </div>
+        </div>
+        <div class="tab-panel" id="collections">
+          <div class="registry-tree">
+            <div class="node primary">Registry Collections</div>
+            <div class="tree-children">
+              <div class="node">Global Collection<br><span class="muted">Discover everything approved for visibility.</span></div>
+              <div class="node">Quarantined Collection<br><span class="muted">Block discovery while investigation or remediation occurs.</span></div>
+              <div class="node">Custom Collections<br><span class="muted">Sales, Finance, HR, IT, and business-specific catalogs.</span></div>
+            </div>
+          </div>
+        </div>
+        <div class="tab-panel" id="catalog">
+          <div class="value-stack">
+            <div class="card"><h3>Discovery</h3><p class="muted">Help people and agents find approved capabilities.</p></div>
+            <div class="card"><h3>Inventory</h3><p class="muted">Maintain a single view of agent assets and metadata.</p></div>
+            <div class="card"><h3>Visibility</h3><p class="muted">Expose ownership, purpose, status, and risk posture.</p></div>
+            <div class="card"><h3>Agent catalog</h3><p class="muted">Publish curated collections for business adoption.</p></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="section" id="security">
+        <div class="section-header">
+          <div>
+            <div class="eyebrow">Section 7</div>
+            <h2>Agent Security</h2>
+            <p class="muted">Agent security combines identity controls, threat protection, and data protection across Entra, Defender, and Purview.</p>
+          </div>
+        </div>
+        <table class="matrix" aria-label="Agent security matrix">
+          <thead>
+            <tr>
+              <th>Security domain</th>
+              <th>Microsoft capability</th>
+              <th>Agent 365 outcome</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>Identity security</strong></td>
+              <td class="muted">Entra agent IDs, risk detection, Conditional Access, RBAC</td>
+              <td><span class="status"><span class="dot"></span>Verified and governed agent access</span></td>
+            </tr>
+            <tr>
+              <td><strong>Threat protection</strong></td>
+              <td class="muted">Defender malware protection, compromise detection, threat hunting, response</td>
+              <td><span class="status"><span class="dot"></span>Detection and response for agent compromise</span></td>
+            </tr>
+            <tr>
+              <td><strong>Data protection</strong></td>
+              <td class="muted">Purview DLP, label protection, governance policies, AI data protection</td>
+              <td><span class="status"><span class="dot"></span>Policy-based control over data access and use</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section class="section" id="workiq">
+        <div class="section-header">
+          <div>
+            <div class="eyebrow">Section 8</div>
+            <h2>Work IQ Enterprise Context Engine</h2>
+            <p class="muted">Work IQ gives agents organizational context by connecting signals from emails, documents, meetings, chats, transcripts, people, and relationships.</p>
+          </div>
+        </div>
+        <div class="split">
+          <div class="workiq-flow">
+            <div class="node-grid">
+              <div class="node">Email</div>
+              <div class="node">Documents</div>
+              <div class="node">Meetings</div>
+              <div class="node">Chats</div>
+              <div class="node">Transcripts</div>
+              <div class="node">People</div>
+            </div>
+            <div class="flow-line" aria-hidden="true"></div>
+            <div class="node primary">Work IQ</div>
+            <div class="flow-line" aria-hidden="true"></div>
+            <div class="node">Intelligent Agent</div>
+          </div>
+          <div class="panel" style="padding: 1rem;">
+            <h3>What Work IQ provides</h3>
+            <ul class="list">
+              <li>Organizational memory across people, meetings, files, and conversations.</li>
+              <li>Semantic understanding of business context and relationships.</li>
+              <li>Relationship mapping to improve agent relevance and grounding.</li>
+              <li>Contextual intelligence similar to how people learn through work artifacts.</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <section class="section" id="ecosystem">
+        <div class="section-header">
+          <div>
+            <div class="eyebrow">Section 9</div>
+            <h2>Multi-Agent Ecosystem</h2>
+            <p class="muted">The registry enables agent-to-agent discovery through agent cards, skill discovery, capability metadata, and catalog visibility.</p>
+          </div>
+        </div>
+        <div class="ecosystem">
+          <div class="node-grid">
+            <div class="node">Sales Agent</div>
+            <div class="node">IT Agent</div>
+            <div class="node">Finance Agent</div>
+          </div>
+          <div class="flow-line" aria-hidden="true"></div>
+          <div class="node primary">Registry</div>
+          <div class="flow-line" aria-hidden="true"></div>
+          <div class="node-grid">
+            <div class="node">Agent Cards</div>
+            <div class="node">Skill Discovery</div>
+            <div class="node">Capability Discovery</div>
+          </div>
+        </div>
+      </section>
+
+      <section class="section" id="observability">
+        <div class="section-header">
+          <div>
+            <div class="eyebrow">Section 10</div>
+            <h2>Platform Observability</h2>
+            <p class="muted">Agent platforms need operational visibility into prompts, safety, quality, regressions, and platform-specific runtime behavior.</p>
+          </div>
+        </div>
+        <table class="matrix" aria-label="Platform observability">
+          <thead>
+            <tr>
+              <th>Agent platform</th>
+              <th>Management scope</th>
+              <th>Observability signals</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>Azure AI Foundry</strong></td>
+              <td class="muted">Custom and enterprise-grade agent development</td>
+              <td class="muted">Prompt tracking, evaluations, regression testing, safety monitoring</td>
+            </tr>
+            <tr>
+              <td><strong>Copilot Studio</strong></td>
+              <td class="muted">Low-code agent creation and business process integration</td>
+              <td class="muted">Conversation quality, orchestration performance, policy alignment</td>
+            </tr>
+            <tr>
+              <td><strong>Agent Builder</strong></td>
+              <td class="muted">M365-native agent composition</td>
+              <td class="muted">Usage, grounding quality, adoption, and lifecycle state</td>
+            </tr>
+            <tr>
+              <td><strong>ISV and third-party platforms</strong></td>
+              <td class="muted">External agent ecosystems integrated with enterprise controls</td>
+              <td class="muted">Prompt injection detection, hallucination detection, telemetry, and compliance signals</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section class="section" id="value">
+        <div class="section-header">
+          <div>
+            <div class="eyebrow">Final value slide</div>
+            <h2>Secure AI transformation at enterprise scale.</h2>
+            <p class="muted">Agent 365 extends Microsoft's proven identity, security, governance, compliance, productivity, and collaboration capabilities to AI agents, enabling organizations to safely scale thousands of agents across Microsoft and non-Microsoft platforms.</p>
+          </div>
+        </div>
+        <div class="callout">
+          <div class="value-stack">
+            <div><h3>Identity</h3><p class="muted">Known, governed, and accountable agent identities.</p></div>
+            <div><h3>Security</h3><p class="muted">Threat detection, risk controls, and incident response.</p></div>
+            <div><h3>Governance</h3><p class="muted">Sponsor model, lifecycle management, and registry visibility.</p></div>
+            <div><h3>Compliance</h3><p class="muted">Purview-powered data protection and policy enforcement.</p></div>
+            <div><h3>Discovery</h3><p class="muted">Catalogs, collections, agent cards, and skill discovery.</p></div>
+            <div><h3>Work IQ</h3><p class="muted">Contextual grounding from organizational knowledge.</p></div>
+            <div><h3>Productivity</h3><p class="muted">Microsoft 365 collaboration surfaces for agents and people.</p></div>
+            <div><h3>Interoperability</h3><p class="muted">Multi-agent and multi-platform ecosystem support.</p></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="section" id="resources">
+        <div class="section-header">
+          <div>
+            <div class="eyebrow">Source alignment</div>
+            <h2>Referenced content areas</h2>
+            <p class="muted">This dashboard is structured from the provided Agent 365 pitch deck, resource hub, L300 workshop, AI teammate deep dive, LevelUp content, and visual architecture notes.</p>
+          </div>
+        </div>
+        <div class="resource-row">
+          <div class="resource-card"><h3>Agent 365 Resource Hub</h3><a href="https://microsoft.sharepoint.com/sites/ABSCSU/SitePages/Agent-365.aspx?web=1" target="_blank" rel="noreferrer">Open SharePoint hub</a></div>
+          <div class="resource-card"><h3>Orchestration and Readiness Guidance</h3><a href="https://microsoft.sharepoint.com/sites/ABSCSU/_layouts/15/Doc.aspx?sourcedoc=%7B3D91C024-16C2-4B12-B10D-4B03FDF30FD0%7D&file=Agent%20365%20Orchestration%20and%20Readiness%20Guidance.pptx&action=edit&mobileredirect=true&DefaultItemOpen=1" target="_blank" rel="noreferrer">Open PowerPoint</a></div>
+          <div class="resource-card"><h3>L300 Agent Management Workshop</h3><a href="https://microsoft.sharepoint.com/teams/LevelUpSkilling/_layouts/15/Doc.aspx?sourcedoc=%7B3C3973F2-C34A-4256-8A50-568C59D75C91%7D&file=FY26%20Agent%20365%20LevelUp%20Series%20(L300)%20Workshop%20on%20Agent%20Management%20Workshop%20VBD%20-%2018%20May%20.pptx&action=edit&mobileredirect=true&DefaultItemOpen=1" target="_blank" rel="noreferrer">Open PowerPoint</a></div>
+        </div>
+      </section>
+
+      <footer>
+        <p class="print-note">Printed view generated from the Agent 365 Enterprise Control Plane HTML dashboard.</p>
+        <p>Customer-facing L300 dashboard for executive and technical discussions. Content reflects the supplied Agent 365 control plane outline.</p>
+      </footer>
+    </main>
+  </div>
+
+  <script>
+    const capabilityData = {
+      entra: {
+        title: "Entra: Identity and Access Management",
+        summary: "Establishes secure, accountable identity for every agent and every agent blueprint.",
+        items: ["Agent IDs", "Authentication", "Conditional Access", "RBAC", "Entitlement Management", "Risk Detection"]
+      },
+      purview: {
+        title: "Purview: Data Governance",
+        summary: "Applies data discovery, classification, sensitivity, DLP, insider risk, and AI data protection controls.",
+        items: ["Data Discovery", "Classification", "Sensitivity Labels", "DLP", "Insider Risk", "AI Data Protection"]
+      },
+      defender: {
+        title: "Defender: Threat Protection",
+        summary: "Protects agents from compromise and gives security teams signals for detection, hunting, and response.",
+        items: ["Malware Detection", "Threat Intelligence", "Endpoint Protection", "Identity Protection", "Incident Response"]
+      },
+      m365: {
+        title: "Microsoft 365: Productivity",
+        summary: "Connects agents to collaboration and productivity surfaces where work happens.",
+        items: ["Outlook", "Teams", "SharePoint", "OneDrive", "Copilot"]
+      },
+      workiq: {
+        title: "Work IQ: Enterprise Context Engine",
+        summary: "Builds organizational context from people, files, meetings, conversations, and relationships.",
+        items: ["People Relationships", "File Relationships", "Meeting Context", "Organizational Memory", "Semantic Understanding"]
+      }
+    };
+
+    const lifecycleData = {
+      create: {
+        title: "Create",
+        summary: "Define the blueprint, business purpose, target users, required data, and responsible sponsor."
+      },
+      configure: {
+        title: "Configure",
+        summary: "Set permissions, access model, governance policy, sponsor metadata, registry visibility, and security posture."
+      },
+      deploy: {
+        title: "Deploy",
+        summary: "Publish through Azure AI Foundry, Copilot Studio, Agent Builder, ISV platforms, or supported third-party runtimes."
+      },
+      operate: {
+        title: "Operate",
+        summary: "Run business workloads while maintaining accountability, agent identity, collaboration access, and service ownership."
+      },
+      monitor: {
+        title: "Monitor",
+        summary: "Track prompts, safety, hallucination risk, prompt injection attempts, evaluations, compliance, and security events."
+      },
+      retire: {
+        title: "Retire",
+        summary: "Remove registry entries, revoke access, disable agent identities, archive required records, and complete governance review."
+      }
+    };
+
+    function renderCapability(key) {
+      const data = capabilityData[key];
+      const details = document.getElementById("capabilityDetails");
+      details.innerHTML = `
+        <div class="details-grid">
+          <div>
+            <h3>${data.title}</h3>
+            <p class="muted">${data.summary}</p>
+          </div>
+          <div>
+            <h3>Core controls</h3>
+            <ul class="list">${data.items.map(item => `<li>${item}</li>`).join("")}</ul>
+          </div>
+        </div>
+      `;
+    }
+
+    function renderLifecycle(key) {
+      const data = lifecycleData[key];
+      const details = document.getElementById("lifecycleDetails");
+      details.innerHTML = `<h3>${data.title}</h3><p class="muted">${data.summary}</p>`;
+    }
+
+    document.querySelectorAll("[data-capability]").forEach(card => {
+      card.addEventListener("click", () => {
+        document.querySelectorAll("[data-capability]").forEach(item => item.classList.remove("active"));
+        card.classList.add("active");
+        renderCapability(card.dataset.capability);
+      });
+    });
+
+    document.querySelectorAll("[data-step]").forEach(step => {
+      step.addEventListener("click", () => {
+        document.querySelectorAll("[data-step]").forEach(item => item.classList.remove("active"));
+        step.classList.add("active");
+        renderLifecycle(step.dataset.step);
+      });
+    });
+
+    document.querySelectorAll("[data-tab]").forEach(tab => {
+      tab.addEventListener("click", () => {
+        document.querySelectorAll("[data-tab]").forEach(item => item.classList.remove("active"));
+        document.querySelectorAll(".tab-panel").forEach(panel => panel.classList.remove("active"));
+        tab.classList.add("active");
+        document.getElementById(tab.dataset.tab).classList.add("active");
+      });
+    });
+
+    const sections = Array.from(document.querySelectorAll("main section[id]"));
+    const navLinks = Array.from(document.querySelectorAll(".nav a"));
+    const observer = new IntersectionObserver(entries => {
+      entries.forEach(entry => {
+        if (!entry.isIntersecting) return;
+        navLinks.forEach(link => link.classList.toggle("active", link.getAttribute("href") === `#${entry.target.id}`));
+      });
+    }, { rootMargin: "-30% 0px -60% 0px", threshold: 0.01 });
+
+    sections.forEach(section => observer.observe(section));
+    renderCapability("entra");
+    renderLifecycle("create");
+  </script>
+</body>
+</html>
